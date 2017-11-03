@@ -52,7 +52,6 @@ ggplot(aes(x = carat, y = price),
 
 ```{r Add a Linear Model}
 
-data(diamonds)
 ggplot(aes(x = carat, y = price),
        data = diamonds) +
   coord_cartesian(xlim = c(0, quantile(diamonds$carat, probs = 0.99)),
@@ -301,8 +300,7 @@ Response:
 Notes:
 
 ```{r Building the Linear Model}
-diamond_samp <- diamonds[sample(1:length(diamonds$price), 10000), ]
-m1 <- lm(I(log(price)) ~ I(carat^(1/3)), data = diamondsbig_samp)
+m1 <- lm(I(log(price)) ~ I(carat^(1/3)), data = diamonds)
 m2 <- update(m1, ~ . + carat)
 m3 <- update(m2, ~ . + cut)
 m4 <- update(m3, ~ . + color)
@@ -332,13 +330,6 @@ Response: There are a lot of variables included in the model (some with redundan
 Notes:
 
 ```{r A Bigger, Better Data Set}
-install.packages('bitops')
-install.packages('RCurl')
-library('bitops')
-library('RCurl')
-
-diamondsurl = getBinaryURL("https://raw.github.com/solomonm/diamonds-data/master/BigDiamonds.Rda")
-load(rawConnection(diamondsurl))
 
 load("BigDiamonds.rda")
 
@@ -380,9 +371,14 @@ Notes:
 # We'll do that for you and check your model summaries (R^2 values, AIC, etc.)
 
 # Your task is to write the code to create the models.
-
-
-
+diamondbig_samp <- diamonds[sample(1:length(diamonds$price), 10000), ]
+m1 <- lm(I(log(price)) ~ I(carat^(1/3)), data = diamondsbig[diamonds$price < 10000 &
+                                                              diamondsbig$cert == 'GIA',])
+m2 <- update(m1, ~ . + carat)
+m3 <- update(m2, ~ . + cut)
+m4 <- update(m3, ~ . + color)
+m5 <- update(m4, ~ . + clarity)
+mtable(m1, m2, m3, m4, m5)
 
 ```
 
@@ -397,20 +393,25 @@ Round 1.00 Very Good I VS1 $5,601
 ```{r}
 #Be sure you’ve loaded the library memisc and have m5 saved as an object in your workspace.
 thisDiamond = data.frame(carat = 1.00, cut = "V.Good",
-                         color = "I", clarity="VS1")
+                         color = "I", clarity = "VS1")
 modelEstimate = predict(m5, newdata = thisDiamond,
-                        interval="prediction", level = .95)
+                        interval = "prediction", level = .95)
+
+exp(modelEstimate)
+summary(subset(diamondsbig, carat == 1.00 & cut == "V.Good" & color == "I" & clarity == "VS1")$price)
+
+dat = data.frame(m4$model, m4$residuals)
+
+with(dat, sd(m4.residuals))
+
+with(subset(dat, carat > .9 & carat < 1.1), sd(m4.residuals))
+
+dat$resid <- as.numeric(dat$m4.residuals)
+ggplot(aes(y = resid, x = round(carat, 2)), data = dat) +
+  geom_line(stat = "summary", fun.y = sd)
+
 ```
 
-Evaluate how well the model predicts the BlueNile diamond's price. Think about the fitted point estimate as well as the 95% CI.
+Evaluate how well the model predicts the BlueNile diamond's price. Think about the fitted point estimate as well as the 95% CI. It's pretty close to the mean and median of the subset of those variables. It seems like a decent prediction. So we're 95% confident that the price will fall between 3587.218 and 7008.863. The lower bound of the confidence interval is in between the minimum and the 1st quartile.
 
-***
-
-## Final Thoughts
-Notes:
-
-***
-
-Click **KnitHTML** to see all of your hard work and to have an html
-page of this lesson, your answers, and your notes!
 
